@@ -1,0 +1,100 @@
+public class BulkUploadCtrl {
+  @AuraEnabled
+    public static Map<String,Object> getMetadataConfig(){
+        Map<String,Object> mapResponse = new Map<String,Object>();
+        Map<String,Object> mapHeaders = new Map<String,Object>();
+        Map<String,Object> mapApiNameFields = new Map<String,Object>();
+        List<Map<String,Object>> options = new List<Map<String,Object>>(); 
+        for(ARTL_Bulk_Upload_Config__mdt objMdt : [SELECT Label, File_Header_CSV__c,Object_Fields__c FROM ARTL_Bulk_Upload_Config__mdt]){
+            Map<String,Object> option = new Map<String,Object>();
+            option.put('label',objMdt.Label);
+            option.put('value',objMdt.Label);
+            mapHeaders.put(objMdt.Label,objMdt.File_Header_CSV__c);
+            mapApiNameFields.put(objMdt.Label,objMdt.Object_Fields__c);
+            System.debug('Options'+option);
+            options.add(option);
+        }
+        
+        mapResponse.put('headers',mapHeaders);
+        mapResponse.put('options',options);
+        mapResponse.put('apiNames',mapApiNameFields);
+        System.debug('Map'+mapResponse);
+        return mapResponse;
+    }
+    
+     @AuraEnabled
+    public static string createIteration(String fileName, String type){
+        try {
+            ARTL_Bulk_Upload_Iteration__c objIteration = new ARTL_Bulk_Upload_Iteration__c();
+            objIteration.File_Name__c = fileName;
+            insert objIteration;
+            return objIteration.Id;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+    
+    /*
+     * Function Name: uploadData.
+     * Functionality: inserts record in Staging Object. 
+     */
+    @AuraEnabled
+    public static string uploadData(List<Object> csvData, String header, String type, Id iterationId ){
+       try {
+    
+            ARTL_Bulk_Upload_Config__mdt recMetadata = [SELECT Object_Fields__c ,File_Header_CSV__c FROM ARTL_Bulk_Upload_Config__mdt WHERE DeveloperName =:type];
+            List<String> lstHeaderColumns = recMetadata.File_Header_CSV__c.split(',');
+            Integer numberOfColumns =  lstHeaderColumns.size();
+            List<String> lstFieldAPIs = recMetadata.Object_Fields__c .split(',');
+            System.debug('Field API'+lstFieldAPIs);
+            List<sObject> lstStageToInsert = new List<sObject>();
+            for(Object obj : csvData) {
+                System.debug('CSV Data'+obj);
+                String strColumns = String.valueOf(obj);
+                System.debug('strColumns'+strColumns);
+                Sobject objRec;
+                objRec = new Account();
+                if (strColumns.startsWith(','))
+                    strColumns = strColumns.replace(',', ':blank:,');
+                while (strColumns.contains(',,')) {
+                    strColumns = strColumns.replace(',,', ',:blank:,');
+                }
+                if (strColumns.endsWith(',')) {
+                    strColumns = strColumns + ':blank:';
+                }
+                String[] lstData = strColumns.trim().split(',(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)');
+                //List<String> lstData = strColumns.split(',');
+                for(Integer iterator=0; iterator<numberOfColumns; iterator++) {
+                    System.debug('Field'+lstFieldAPIs[iterator]);
+                    objRec.put(lstFieldAPIs[iterator], (lstData.size()>iterator) ? (String.valueOf(lstData[iterator]).replaceAll('"','').replaceAll(':blank:','')) : '');
+                    objRec.put('Type__c',type);
+                    System.debug('FINAL'+objRec);
+                }
+                     
+                
+                objRec.put('ARTL_Bulk_Upload_Iteration__c',iterationId);
+                lstStageToInsert.add(objRec);
+            }
+        
+            insert lstStageToInsert;
+           
+            return 'success';
+        } catch (Exception e) {
+            return 'error';
+            //throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+     @AuraEnabled
+    public static String getTemplate(String type){
+        try {
+            ARTL_Bulk_Upload_Config__mdt recMetadata = [SELECT Template_URL__c FROM ARTL_Bulk_Upload_Config__mdt WHERE DeveloperName =:type];
+            String url = recMetadata.Template_URL__c;
+            return url;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+
+}
