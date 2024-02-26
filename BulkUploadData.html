@@ -1,0 +1,116 @@
+<template>
+
+    <article class="slds-card">
+        <div class="slds-grid slds-gutters slds-p-around_small">
+            <div class="slds-col slds-size_2-of-3">
+            <lightning-combobox
+                name="progress"
+                label="Upload Type"
+                value={value}
+                placeholder="Select Progress"
+                options={_options}
+                onchange={handleSelectChange} required></lightning-combobox>
+            </div>
+        </div>
+    </article> 
+            <!--add code to show dropdown to select files type, BUC or quote-->
+    <template if:true={value}>
+      <article class="slds-card">
+        <div class="slds-grid slds-gutters slds-p-around_x-small">
+            <div class="slds-col slds-size_8-of-12" >
+            <template if:false={_hideUpload}>
+                <label for="upload" class="drop-container">
+                
+                <form>
+                    <input type="file" id="upload" accept={acceptedFormats} onchange={handleFilesChange} required>
+                </form>
+                </label>
+                <div class="slds-text-body_regular slds-p-around_small">{fileName}</div>
+                <br>
+            </template>
+            <template if:false={showSubmit}>
+                <template if:true={_hideUpload}>
+
+                <div class="slds-text-heading_medium slds-p-around_small">If you want to upload more files. Please click on Upload Next File</div>
+                </template>
+            </template>
+            <template if:true={showSubmit}>
+                <template if:true={_hideUpload}>
+                  <template if:false={savedfile}>
+                <div class="slds-text-heading_medium slds-p-around_small">The file uploaded will be validated in the backend after you click Submit CSV.</div>
+                  </template>  
+                  <template if:true={savedfile}>
+                    <div class="slds-text-heading_medium slds-p-around_small">Sit back and relax while your data is being uploaded. </div>
+                  </template>
+              </template>
+            </template>
+            </div>
+            <div class="slds-col slds-size_4-of-12">
+            <div class="threeborders slds-p-around_small">
+                <div class="slds-p-around_x-small">
+                <!--<lightning-button label='Download Template' onclick={handleDownload} variant="brand">-->
+                <a href={url} download="template">Download Template</a>
+                <!--</lightning-button>-->
+                </div>
+                <div class="slds-p-around_x-small">
+                <lightning-button label='Upload File' onclick={handleSave} variant="brand" disabled={_disableSave}></lightning-button>
+                </div>
+            
+                <!-- <div class="slds-p-around_x-small">
+                <lightning-button label='Upload Next File' onclick={handleNextUpload} variant="brand" disabled={_disableNextUpload}></lightning-button>
+                </div> -->
+                <!-- <template if:true={showSubmit}>
+                <div class="slds-p-around_x-small">
+                    <lightning-button label='Submit CSV' onclick={handleSubmit} variant="brand" disabled={_disableSubmit}>
+                    </lightning-button>
+                </div>
+                </template>-->
+                
+                <!--<div class="slds-p-around_x-small">
+                <lightning-button label='Delete File' onclick={deleteFile} variant="neutral" disabled={_disableDelete}></lightning-button>
+                </div>-->
+            </div>
+            </div>
+        </div>
+      
+    
+    
+      <template if:true={isShowModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+          aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+          <div class="slds-modal__container">
+            <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+              <p>
+                <template if:false={_uploadComplete}>
+                  <template if:true={progress}>
+                    Uploading {progress} %
+                    <lightning-progress-bar value={progress} size="large"></lightning-progress-bar>
+                  </template>
+                </template>
+                <template if:true={_uploadComplete}>
+                  <template if:true={progress}>
+                    Uploaded {progress} %
+                    <lightning-progress-bar value={progress} size="large"></lightning-progress-bar>
+                  </template>
+                </template>
+                <br />
+              </p>
+              <template if:true={_uploadComplete}>
+                <footer class="slds-modal__footer">
+                  <button class="slds-button slds-button_neutral" onclick={handleDone}>Done</button>
+                </footer>
+              </template>
+            </div>
+          </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+      </template>
+      <br>
+      <template if:true={showLoadingSpinner}>
+        <lightning-spinner alternative-text="Uploading.." variant="brand" size="medium">
+        </lightning-spinner>
+      </template>
+    </article>
+    </template>
+    
+</template>
